@@ -22,3 +22,13 @@ contactsRouter.put("/:id", validateBody(updateContactSchema), updateContact);
 contactsRouter.delete("/:id", deleteContact);
 
 ![alt text](img/image-5.png)
+
+
+contactsRouter.put("/:id/favorite", validateBody(updateStatusSchema), updateFavorite);
+
+![alt text](img/image-7.png)
+
+
+DataBase:
+
+![alt text](img/image-6.png)
