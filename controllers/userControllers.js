@@ -1,8 +1,7 @@
 import {
   registerUser,
   loginUser,
-  logoutUser,
-  getCurrentUser,
+  logoutUser
 } from "../services/userServices.js";
 
 export async function register(req, res) {
