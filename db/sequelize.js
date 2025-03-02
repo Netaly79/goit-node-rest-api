@@ -15,9 +15,12 @@ const sequelize = new Sequelize({
 try {
   await sequelize.authenticate();
   console.log("Database connection successful");
+
+  await sequelize.sync();
+  console.log("Database sync successful");
 } catch (error) {
   console.error("Unable to connect to the database:", error);
-  process.exit(1)
+  process.exit(1);
 }
 
 export default sequelize;
