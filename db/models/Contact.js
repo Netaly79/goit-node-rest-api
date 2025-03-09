@@ -1,13 +1,13 @@
 import { DataTypes } from "sequelize";
 import sequelize from "../sequelize.js";
 
-const User = sequelize.define("users", {
+const Contact = sequelize.define("contacts", {
   id: {
     type: DataTypes.INTEGER,
     primaryKey: true,
     autoIncrement: true,
   },
-  password: {
+  name: {
     type: DataTypes.STRING,
     allowNull: false,
   },
@@ -16,15 +16,18 @@ const User = sequelize.define("users", {
     allowNull: false,
     unique: true,
   },
-  subscription: {
-    type: DataTypes.ENUM,
-    values: ["starter", "pro", "business"],
-    defaultValue: "starter",
-  },
-  token: {
+  phone: {
     type: DataTypes.STRING,
-    defaultValue: null,
+    allowNull: false,
+  },
+  favorite: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
+  },
+  owner: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
   },
 });
 
-export default User;
+export default Contact;

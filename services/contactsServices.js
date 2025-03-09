@@ -1,24 +1,26 @@
-import User from "../db/models/User.js";
+import Contact from "../db/models/Contact.js";
 
-export async function listContacts() {
+export async function listContacts(userId) {
   try {
-    return await User.findAll();
+    return await Contact.findAll({
+      where: { owner: userId },
+    });
   } catch (error) {
     return [];
   }
 }
 
-export async function getContactById(contactId) {
+export async function getContactById(contactId, userId) {
   try {
-    return User.findByPk(contactId);
+    return Contact.findOne({ where: { owner: userId, id: contactId } });
   } catch (error) {
     return null;
   }
 }
 
-export async function removeContact(contactId) {
+export async function removeContact(contactId, userId) {
   try {
-    const contact = await User.findByPk(contactId);
+    const contact = await Contact.findOne({ where: { id: contactId, owner: userId } });
     if (!contact) return null;
     await contact.destroy();
     return contact;
@@ -27,17 +29,17 @@ export async function removeContact(contactId) {
   }
 }
 
-export async function addContact(name, email, phone) {
+export async function addContact(name, email, phone, userId) {
   try {
-    return await User.create({ name, email, phone });
+    return await Contact.create({ name, email, phone, owner: userId });
   } catch (error) {
     return null;
   }
 }
 
-export async function updateCurrentContact(id, body) {
+export async function updateCurrentContact(id, userId, body) {
   try {
-    const contact = await User.findByPk(id);
+    const contact = await Contact.findOne({ where: { owner: userId, id: contactId } });
     if (!contact) {
       return null;
     }
@@ -48,9 +50,9 @@ export async function updateCurrentContact(id, body) {
   }
 }
 
-export async function updateStatusContact(id, body) {
+export async function updateStatusContact(id, userId, body) {
   try {
-    const contact = await User.findByPk(id);
+    const contact = await Contact.findOne({ where: { id, owner: userId } });
     if (!contact) {
       return null;
     }
@@ -61,15 +63,3 @@ export async function updateStatusContact(id, body) {
   }
 }
 
-export async function updateFavorite(req, res) {
-  const { id } = req.params;
-  const { favorite } = req.body;
-
-  const updatedContact = await updateStatusContact(id, { favorite });
-
-  if (!updatedContact) {
-    return res.status(404).json({ message: "Not found" });
-  }
-
-  res.status(200).json(updatedContact);
-}
