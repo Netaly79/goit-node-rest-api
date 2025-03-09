@@ -1,13 +1,26 @@
+import gravatar from "gravatar";
+import fs from "fs/promises";
+import path from "path";
+import { fileURLToPath } from "url";
+import { dirname } from "path";
 import {
   registerUser,
   loginUser,
-  logoutUser
+  logoutUser,
+  uploadAvatarService,
 } from "../services/userServices.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+const avatarsDir = path.join(__dirname, "../public/avatars");
 
 export async function register(req, res) {
   const { email, password } = req.body;
 
-  const result = await registerUser(email, password);
+  const avatarURL = gravatar.url(email, { s: "200", d: "retro", r: "pg" });
+
+  const result = await registerUser(email, password, avatarURL);
 
   if (result.error) {
     return res
@@ -57,3 +70,23 @@ export async function current(req, res) {
     subscription: user.subscription,
   });
 }
+
+export const uploadAvatar = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: "No file uploaded." });
+    }
+    const { path: tempPath, originalname } = req.file;
+    const ext = path.extname(originalname);
+    const newFilename = `${req.user.id}${ext}`;
+    const newFilePath = path.join(avatarsDir, newFilename);
+
+    await fs.rename(tempPath, newFilePath);
+
+    const avatarURL = `/avatars/${newFilename}`;
+    await uploadAvatarService(req, avatarURL);
+    res.status(200).json({ avatarURL });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to upload avatar." });
+  }
+};
