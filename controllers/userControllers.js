@@ -81,7 +81,13 @@ export const uploadAvatar = async (req, res) => {
     const newFilename = `${req.user.id}${ext}`;
     const newFilePath = path.join(avatarsDir, newFilename);
 
-    await fs.rename(tempPath, newFilePath);
+    try {
+      await fs.rename(tempPath, newFilePath);
+    } catch (moveError) {
+      await fs.unlink(tempPath);
+      console.log("Can't move file");
+      return res.status(500).json({ error: "Failed to move avatar file." });
+    }
 
     const avatarURL = `/avatars/${newFilename}`;
     await uploadAvatarService(req, avatarURL);
