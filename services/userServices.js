@@ -2,7 +2,9 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import multer from "multer";
 import path from "path";
+import { v4 as uuidv4 } from "uuid";
 import User from "../db/models/User.js";
+import { sendEmail } from "./mailServices.js";
 
 const SECRET_KEY = process.env.JWT_SECRET;
 
@@ -27,7 +29,21 @@ export async function registerUser(email, password) {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const newUser = await User.create({ email, password: hashedPassword });
+    const verificationToken = uuidv4();
+
+    const newUser = await User.create({
+      email,
+      password: hashedPassword,
+      verificationToken,
+    });
+
+    const verificationLink = `http://localhost:3000/api/auth/verify/${verificationToken}`;
+
+    await sendEmail(
+      newUser.email,
+      "Email Verification",
+      `Please verify your email by clicking the link: ${verificationLink}`
+    );
 
     return {
       user: {
@@ -40,13 +56,16 @@ export async function registerUser(email, password) {
     return { error: { status: 500, message: "Internal Server Error" } };
   }
 }
-
 export async function loginUser(email, password) {
   try {
     const user = await User.findOne({ where: { email } });
 
     if (!user) {
       return { error: { status: 401, message: "Email or password is wrong" } };
+    }
+
+    if (!user.verify) {
+      return { error: { status: 403, message: "Email not verified" } };
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
@@ -100,4 +119,45 @@ export async function uploadAvatarService(req, avatarURL) {
     console.error(error);
     throw new Error("Internal Server Error");
   }
+}
+export async function verifyCurrentUser(req, res) {
+  try {
+    const { verificationToken } = req.params;
+
+    const user = await User.findOne({ where: { verificationToken } });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    await User.update(
+      { verify: true, verificationToken: null },
+      { where: { id: user.id } }
+    );
+    return res.status(200).json({ message: "Verification successful" });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+}
+
+export async function resendVerification(email, res) {
+  const user = await User.findOne({ where: { email } });
+
+  if (!user) {
+    return res.status(404).json({ message: "User not found" });
+  }
+
+  if (user.verify) {
+    return res
+      .status(400)
+      .json({ message: "Verification has already been passed" });
+  }
+
+  const verificationLink = `http://localhost:3000/api/auth/verify/${user.verificationToken}`;
+  await await sendEmail(
+    user.email,
+    "Email Verification",
+    `Please verify your email by clicking the link: ${verificationLink}`
+  );
 }
