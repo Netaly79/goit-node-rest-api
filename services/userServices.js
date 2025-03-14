@@ -1,8 +1,22 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import User from "../db/models/User.js"
+import multer from "multer";
+import path from "path";
+import User from "../db/models/User.js";
 
 const SECRET_KEY = process.env.JWT_SECRET;
+
+const __dirname = path.dirname(new URL(import.meta.url).pathname);
+const uploadDir = path.join(__dirname, "../temp");
+const storage = multer.diskStorage({
+  destination: uploadDir,
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname);
+    cb(null, `${req.user.id}${ext}`);
+  },
+});
+
+const upload = multer({ storage }).single("avatar");
 
 export async function registerUser(email, password) {
   try {
@@ -40,7 +54,7 @@ export async function loginUser(email, password) {
       return { error: { status: 401, message: "Email or password is wrong" } };
     }
 
-    const token = jwt.sign({id: user.id}, SECRET_KEY, {
+    const token = jwt.sign({ id: user.id }, SECRET_KEY, {
       expiresIn: "24h",
     });
 
@@ -74,4 +88,16 @@ export async function logoutUser(user) {
   }
 }
 
+export async function uploadAvatarService(req, avatarURL) {
+  if (!req.file) {
+    throw new Error("No file uploaded");
+  }
 
+  try {
+    await User.update({ avatarURL }, { where: { id: req.user.id } });
+    return { user: { avatarURL } };
+  } catch (error) {
+    console.error(error);
+    throw new Error("Internal Server Error");
+  }
+}
