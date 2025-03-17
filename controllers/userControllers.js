@@ -8,6 +8,8 @@ import {
   loginUser,
   logoutUser,
   uploadAvatarService,
+  verifyCurrentUser,
+  resendVerification,
 } from "../services/userServices.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -94,5 +96,29 @@ export const uploadAvatar = async (req, res) => {
     res.status(200).json({ avatarURL });
   } catch (error) {
     res.status(500).json({ error: "Failed to upload avatar." });
+  }
+};
+
+export const verifyUser = async (req, res) => {
+  try {
+    await verifyCurrentUser(req, res);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const resendVerificationEmail = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ message: "missing required field email" });
+    }
+
+    const user = await resendVerification(email);
+    return res.status(200).json({ message: "Verification email sent" });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Internal Server Error" });
   }
 };

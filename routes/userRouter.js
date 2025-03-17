@@ -3,7 +3,7 @@ import multer from "multer";
 import path from "path";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
-import { register, login, logout, current, uploadAvatar } from "../controllers/userControllers.js";
+import { register, login, logout, current, uploadAvatar, verifyUser, resendVerificationEmail } from "../controllers/userControllers.js";
 import validateBody from "../helpers/validateBody.js";
 import { registerSchema } from "../schemas/userSchemas.js";
 import { authMiddleware } from "../middleware/authMiddleware.js";
@@ -29,5 +29,7 @@ userRouter.post("/login", validateBody(registerSchema), login);
 userRouter.post("/logout", authMiddleware, logout);
 userRouter.get("/current", authMiddleware, current);
 userRouter.patch("/avatars", authMiddleware, upload.single("avatar"), uploadAvatar);
+userRouter.post("/verify", resendVerificationEmail);
+userRouter.get('/verify/:verificationToken', verifyUser);
 
 export default userRouter;
